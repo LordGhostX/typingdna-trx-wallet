@@ -24,8 +24,9 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(255), unique=True, nullable=False)
     password = db.Column(db.String(255), unique=False, nullable=False)
-    private_key = db.Column(db.String(255), unique=False, nullable=False)
-    address = db.Column(db.String(255), unique=False, nullable=False)
+    private_key = db.Column(db.String(255), unique=True, nullable=False)
+    address = db.Column(db.String(255), unique=True, nullable=False)
+    typingdna_secured = db.Column(db.Boolean, nullable=False, default=False)
     date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
 
@@ -106,6 +107,13 @@ def login():
             flash("You have supplied invalid login credentials", "danger")
             return redirect(url_for("login"))
     return render_template("login.html")
+
+
+@app.route("/auth/typingdna/enroll/", methods=["GET", "POST"])
+def enroll_typingdna():
+    if request.method == "POST":
+        print(request.form.get("typing-pattern"))
+    return render_template("typingdna.html", action="enroll")
 
 
 @app.route("/dashboard/", methods=["GET", "POST"])

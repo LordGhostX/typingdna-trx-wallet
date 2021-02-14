@@ -105,6 +105,7 @@ def login():
                 "username": user.username,
                 "address": user.address
             }
+            session["typingdna_auth"] = False
             if user.typingdna_secured:
                 return redirect(url_for("dashboard"))
             else:
@@ -126,6 +127,7 @@ def enroll_typingdna():
             User.query.filter_by(username=username).update(
                 dict(typingdna_secured=True))
             db.session.commit()
+            session["typingdna_auth"] = True
             flash("You have successfully registered TypingDNA 2FA", "success")
             return redirect(url_for("dashboard"))
         else:
@@ -134,12 +136,35 @@ def enroll_typingdna():
     return render_template("typingdna-enroll.html")
 
 
+@app.route("/auth/typingdna/verify/", methods=["GET", "POST"])
+@login_required
+def verify_typingdna():
+    if request.method == "POST":
+        tp = request.form.get("tp")
+        username = session["user"]["username"]
+        r = tdna.auto(tdna.hash_text(username), tp)
+        if r.status_code == 200:
+            if r.json()["result"] == 1:
+                session["typingdna_auth"] = True
+                return redirect(url_for("dashboard"))
+            else:
+                flash(
+                    "You failed the TypingDNA verification check, please try again", "danger")
+                return redirect(url_for("verify_typingdna"))
+        else:
+            flash(r.json()["message"], "danger")
+            return redirect(url_for("verify_typingdna"))
+    return render_template("typingdna-verify.html")
+
+
 @app.route("/dashboard/", methods=["GET", "POST"])
 @login_required
 def dashboard():
     user = User.query.filter_by(username=session["user"]["username"]).first()
     if not user.typingdna_secured:
         return redirect(url_for("enroll_typingdna"))
+    if not session["typingdna_auth"]:
+        return redirect(url_for("verify_typingdna"))
 
     tron = Tron(full_node=full_node, solidity_node=solidity_node,
                 event_server=event_server)

@@ -6,6 +6,7 @@ from flask import *
 from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
 from tronapi import Tron
+from typingdna import TypingDNA
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "SECRET_KEY"
@@ -14,6 +15,8 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///wallet.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 Bootstrap(app)
 db = SQLAlchemy(app)
+tdna = TypingDNA("apiKey", "apiSecret")
+
 
 full_node = "https://api.trongrid.io"
 solidity_node = "https://api.trongrid.io"
@@ -102,7 +105,10 @@ def login():
                 "username": user.username,
                 "address": user.address
             }
-            return redirect(url_for("dashboard"))
+            if user.typingdna_secured:
+                return redirect(url_for("dashboard"))
+            else:
+                return redirect(url_for("enroll_typingdna"))
         else:
             flash("You have supplied invalid login credentials", "danger")
             return redirect(url_for("login"))
@@ -110,16 +116,31 @@ def login():
 
 
 @app.route("/auth/typingdna/enroll/", methods=["GET", "POST"])
+@login_required
 def enroll_typingdna():
     if request.method == "POST":
-        print(request.form.get("typing-pattern"))
-    return render_template("typingdna.html", action="enroll")
+        tp = request.form.get("tp")
+        username = session["user"]["username"]
+        r = tdna.auto(tdna.hash_text(username), tp)
+        if r.status_code == 200:
+            User.query.filter_by(username=username).update(
+                dict(typingdna_secured=True))
+            db.session.commit()
+            flash("You have successfully registered TypingDNA 2FA", "success")
+            return redirect(url_for("dashboard"))
+        else:
+            flash(r.json()["message"], "danger")
+            return redirect(url_for("enroll_typingdna"))
+    return render_template("typingdna-enroll.html")
 
 
 @app.route("/dashboard/", methods=["GET", "POST"])
 @login_required
 def dashboard():
     user = User.query.filter_by(username=session["user"]["username"]).first()
+    if not user.typingdna_secured:
+        return redirect(url_for("enroll_typingdna"))
+
     tron = Tron(full_node=full_node, solidity_node=solidity_node,
                 event_server=event_server)
     tron.private_key = user.private_key

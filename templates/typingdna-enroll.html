@@ -6,11 +6,7 @@
     <div class="col-lg-12">
       <div class="jumbotron text-center p-4">
         <h2>Online TRON Cryptocurrency Wallet</h2>
-        {% if action == "enroll" %}
         <p>Set TypingDNA 2FA on your online wallet</p>
-        {% else %}
-        <p>Verify your TypingDNA 2FA to access your online wallet</p>
-        {% endif %}
       </div>
     </div>
     <div class="col-lg-6 text-center">
@@ -19,23 +15,25 @@
         <hr>
         <p class="mb-0"><strong>"I am authenticated by the way I type"</strong></p>
       </div>
-      <div id="failed-auth" class="alert alert-danger alert-dismissible fade show" role="alert" style="display: none">
-        <strong>An error occurred during authentication, please refresh the page to start again
-          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-          </button>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      {% for category, message in messages %}
+      <div class="alert alert-{{ category }}" role="alert">
+        {{ message }}
+      </div>
+      {% endfor %}
+      {% endif %}
+      {% endwith %}
+      <div id="failed-auth" class="alert alert-danger" role="alert" style="display: none">
+        <strong>You have not completed your authentication, please type the text above</strong>
       </div>
       <form method="POST">
         <div class="form-group">
           <label>Enter the text above without quotes to complete the authentication process</label>
-          <input type="text" class="form-control">
-        </div>
-        <div class="form-group">
-          <label>Enter the text one more time</label>
-          <input type="text" class="form-control">
+          <textarea class="form-control" id="auth-text" rows="3"></textarea>
         </div>
         <div class="text-center">
-          <input type="hidden" id="typing-pattern" name="typing-pattern">
+          <input type="hidden" id="tp" name="tp">
           <button type="button" class="btn btn-success" onclick="startAuthentication()">Start Authentication</button>
         </div>
       </form>
@@ -46,19 +44,34 @@
 </script>
 <script>
   var tdna = new TypingDNA();
+  var typingPatterns = [];
 
   function startAuthentication() {
+    document.getElementById("failed-auth").style.display = "none";
+    document.getElementById("auth-text").value = "";
     TypingDNA.stop()
+
     let typingPattern = tdna.getTypingPattern({
       type: 1,
       text: "I am authenticated by the way I type"
     });
+
     if (typingPattern == null) {
       document.getElementById("failed-auth").style.display = "block";
     } else {
-      document.getElementById("typing-pattern").value = typingPattern;
-      document.forms[0].submit();
+      typingPatterns.push(typingPattern);
+
+      if (typingPatterns.length == 3) {
+        let tp = typingPatterns[0] + ";" + typingPatterns[1] + ";" + typingPatterns[2];
+        document.getElementById("tp").value = tp;
+        document.forms[0].submit();
+      } else {
+        alert("Successfully logged typing pattern, please type the text again to improve accuracy");
+      }
     }
+
+    TypingDNA.reset();
+    TypingDNA.start();
   }
 </script>
 {% endblock %}

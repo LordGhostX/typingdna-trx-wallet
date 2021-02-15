@@ -35,6 +35,9 @@
         {% endfor %}
         {% endif %}
         {% endwith %}
+        <div id="failed-auth" class="alert alert-danger" role="alert" style="display: none">
+          <strong>You have not completed your authentication, please type the text above</strong>
+        </div>
         <div class="tab-pane fade mt-3 show active" id="deposit" role="tabpanel" aria-labelledby="deposit-tab">
           <div class="col-lg-6 col-md-8 offset-lg-3 offset-md-2 text-center">
             <img src="https://chart.googleapis.com/chart?cht=qr&chl={{ session['user']['address'] }}&chs=200x200&chld=L|0" width="200px" alt="wallet address">
@@ -69,7 +72,12 @@
               <label for="password">Account Password</label>
               <input type="password" class="form-control" id="password" name="password" placeholder="Enter Password" required>
             </div>
-            <button type="submit" class="btn btn-success">Make Withdrawal</button>
+            <div class="form-group">
+              <label>Enter the text <strong>I am authenticated by the way I type</strong> to complete the authentication process</label>
+              <input type="hidden" id="tp" name="tp">
+              <textarea class="form-control" id="auth-text" rows="3"></textarea>
+            </div>
+            <button type="button" class="btn btn-success" onclick="startAuthentication()">Make Withdrawal</button>
           </form>
         </div>
         <div class="tab-pane fade mt-3" id="history" role="tabpanel" aria-labelledby="history-tab">
@@ -112,7 +120,31 @@
   </div>
 </div>
 
+<script src="{{ url_for('static', filename='typingdna.js') }}">
+</script>
 <script>
+  var tdna = new TypingDNA();
+
+  function startAuthentication() {
+    document.getElementById("failed-auth").style.display = "none";
+    document.getElementById("auth-text").value = "";
+    TypingDNA.stop()
+
+    let typingPattern = tdna.getTypingPattern({
+      type: 1,
+      text: "I am authenticated by the way I type"
+    });
+
+    if (typingPattern == null) {
+      document.getElementById("failed-auth").style.display = "block";
+      TypingDNA.reset();
+      TypingDNA.start();
+    } else {
+      document.getElementById("tp").value = typingPattern;
+      document.forms[1].submit();
+    }
+  }
+
   function copyaddress() {
     /* Get the text field */
     var copyText = document.getElementById("wallet-address");

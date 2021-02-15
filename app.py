@@ -176,6 +176,7 @@ def dashboard():
         amount = request.form.get("amount").strip()
         address = request.form.get("address").strip()
         password = request.form.get("password")
+        tp = request.form.get("tp")
 
         try:
             amount = float(amount)
@@ -194,6 +195,18 @@ def dashboard():
         if encrypt_password(password) != user.password:
             flash("The account password provided is not valid", "danger")
             return redirect(url_for("dashboard"))
+
+        username = session["user"]["username"]
+        r = tdna.auto(tdna.hash_text(username), tp)
+        if r.status_code == 200:
+            if r.json()["result"] == 0:
+                flash(
+                    "You failed the TypingDNA verification check, please try again", "danger")
+                return redirect(url_for("dashboard"))
+        else:
+            flash(r.json()["message"], "danger")
+            return redirect(url_for("dashboard"))
+
         try:
             transaction = tron.trx.send(address, amount)
             if transaction["result"]:

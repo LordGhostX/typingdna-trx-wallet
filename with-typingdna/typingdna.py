@@ -11,7 +11,7 @@ class TypingDNA:
 
         authstring = f"{apiKey}:{apiSecret}"
         self.headers = {
-            "Authorization": "Basic " + base64.encodestring(authstring.encode()).decode().replace("\n", ""),
+            "Authorization": "Basic " + base64.encodebytes(authstring.encode()).decode().replace("\n", ""),
             "Content-Type": "application/x-www-form-urlencoded"
         }
 

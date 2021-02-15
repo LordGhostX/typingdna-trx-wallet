@@ -1,0 +1,130 @@
+{% extends "bootstrap/base.html" %}
+
+{% block content %}
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-lg-12">
+      <div class="jumbotron text-center p-4">
+        <h2>Online TRON Cryptocurrency Wallet</h2>
+        <p>Manage your online wallet!</p>
+      </div>
+    </div>
+
+    <div class="col-lg-12">
+      <ul class="nav nav-tabs" role="tablist">
+        <li class="nav-item">
+          <a class="nav-link active" id="deposit-tab" data-toggle="tab" href="#deposit" role="tab" aria-controls="deposit" aria-selected="true">Deposit</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" id="withdraw-tab" data-toggle="tab" href="#withdraw" role="tab" aria-controls="withdraw" aria-selected="false">Withdraw</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" id="history-tab" data-toggle="tab" href="#history" role="tab" aria-controls="history" aria-selected="false">History</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+        </li>
+      </ul>
+      <div class="tab-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}" role="alert">
+          {{ message|safe }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+        <div class="tab-pane fade mt-3 show active" id="deposit" role="tabpanel" aria-labelledby="deposit-tab">
+          <div class="col-lg-6 col-md-8 offset-lg-3 offset-md-2 text-center">
+            <img src="https://chart.googleapis.com/chart?cht=qr&chl={{ session['user']['address'] }}&chs=200x200&chld=L|0" width="200px" alt="wallet address">
+            <form>
+              <div class="form-group">
+                <label for="wallet-balance">Wallet Balance</label>
+                <input type="text" id="wallet-balance" class="form-control" value="{{ '{:,.6f}'.format(balance) }} TRX" readonly>
+              </div>
+              <div class="form-group">
+                <label for="wallet-address">Wallet Address</label>
+                <input type="text" id="wallet-address" class="form-control" value="{{ session['user']['address'] }}" readonly>
+              </div>
+              <button type="button" class="btn btn-success" onclick="copyaddress()">Copy Address</button>
+            </form>
+          </div>
+        </div>
+        <div class="tab-pane fade mt-3" id="withdraw" role="tabpanel" aria-labelledby="withdraw-tab">
+          <form class="col-lg-6 col-md-8 offset-lg-3 offset-md-2 text-center" method="POST">
+            <div class="form-group">
+              <label for="wallet-balance">Wallet Balance</label>
+              <input type="text" id="wallet-balance" class="form-control" value="{{ '{:,.6f}'.format(balance) }} TRX" readonly>
+            </div>
+            <div class="form-group">
+              <label for="amount">Withdrawal Amount</label>
+              <input type="number" step="0.000001" name="amount" class="form-control" id="amount" placeholder="Enter withdrawal amount" required>
+            </div>
+            <div class="form-group">
+              <label for="address">Withdrawal Address</label>
+              <input type="text" class="form-control" id="address" name="address" placeholder="Enter withdrawal address" required>
+            </div>
+            <div class="form-group">
+              <label for="password">Account Password</label>
+              <input type="password" class="form-control" id="password" name="password" placeholder="Enter Password" required>
+            </div>
+            <button type="submit" class="btn btn-success">Make Withdrawal</button>
+          </form>
+        </div>
+        <div class="tab-pane fade mt-3" id="history" role="tabpanel" aria-labelledby="history-tab">
+          <div class="table-responsive">
+            <table class="table">
+              <thead class="thead-light">
+                <tr>
+                  <th scope="col">TXID</th>
+                  <th scope="col">Type</th>
+                  <th scope="col">Amount (TRX)</th>
+                  <th scope="col">Address</th>
+                  <th scope="col">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for i in transactions %}
+                <tr>
+                  <th scope="row"><a href="https://tronscan.org/#/transaction/{{ i['txID'] }}" target="_blank">{{ i["txID"][:15] }}...</a></th>
+                  <td>
+                    {% if i["raw_data"]["contract"][0]["parameter"]["value"]["owner_address"]|hexfilter == session["user"]["address"] %}
+                    <button type="button" class="btn btn-danger btn-sm">Withdrawal</button>
+                    {% else %}
+                    <button type="button" class="btn btn-success btn-sm">Deposit</button>
+                    {% endif %}
+                  </td>
+                  <td>{{ "{:,.6f}".format(i["raw_data"]["contract"][0]["parameter"]["value"]["amount"] / 1000000) }}</td>
+                  <td>{{ i["raw_data"]["contract"][0]["parameter"]["value"]["to_address"]|hexfilter }}</td>
+                  <td>{{ i["raw_data"]["timestamp"]|timefilter }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div class="text-center">
+            <a href="https://tronscan.org/#/address/{{ session['user']['address'] }}/transactions" target="_blank"><button type="button" class="btn btn-success">View on Tronscan</button></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function copyaddress() {
+    /* Get the text field */
+    var copyText = document.getElementById("wallet-address");
+
+    /* Select the text field */
+    copyText.select();
+    copyText.setSelectionRange(0, 99999); /*For mobile devices*/
+
+    /* Copy the text inside the text field */
+    document.execCommand("copy");
+
+    alert("Successfully copied wallet address!");
+  }
+</script>
+{% endblock %}

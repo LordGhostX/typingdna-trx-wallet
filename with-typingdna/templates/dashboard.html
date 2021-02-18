@@ -75,7 +75,7 @@
             <div class="form-group">
               <label>Enter the text <strong>I am authenticated by the way I type</strong> to complete the authentication process</label>
               <input type="hidden" id="tp" name="tp">
-              <textarea class="form-control" id="auth-text" rows="3"></textarea>
+              <textarea class="form-control disable-autocomplete" id="auth-text" rows="3"></textarea>
             </div>
             <button type="button" class="btn btn-success" onclick="startAuthentication()">Make Withdrawal</button>
           </form>
@@ -122,8 +122,16 @@
 
 <script src="{{ url_for('static', filename='typingdna.js') }}">
 </script>
+<script src="{{ url_for('static', filename='autocomplete-disabler.js') }}">
+</script>
+<script src="{{ url_for('static', filename='typing-visualizer.js') }}">
+</script>
 <script>
   var tdna = new TypingDNA();
+  var autocompleteDisabler = new AutocompleteDisabler({
+    showTypingVisualizer: true,
+    showTDNALogo: true
+  });
 
   function startAuthentication() {
     document.getElementById("failed-auth").style.display = "none";

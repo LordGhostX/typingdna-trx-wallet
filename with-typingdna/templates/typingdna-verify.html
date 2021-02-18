@@ -30,7 +30,7 @@
       <form method="POST">
         <div class="form-group">
           <label>Enter the text above without quotes to complete the authentication process</label>
-          <textarea class="form-control" id="auth-text" rows="3"></textarea>
+          <textarea class="form-control disable-autocomplete" id="auth-text" rows="3"></textarea>
         </div>
         <div class="text-center">
           <input type="hidden" id="tp" name="tp">
@@ -42,8 +42,16 @@
 </div>
 <script src="{{ url_for('static', filename='typingdna.js') }}">
 </script>
+<script src="{{ url_for('static', filename='autocomplete-disabler.js') }}">
+</script>
+<script src="{{ url_for('static', filename='typing-visualizer.js') }}">
+</script>
 <script>
   var tdna = new TypingDNA();
+  var autocompleteDisabler = new AutocompleteDisabler({
+    showTypingVisualizer: true,
+    showTDNALogo: true
+  });
 
   function startAuthentication() {
     document.getElementById("failed-auth").style.display = "none";

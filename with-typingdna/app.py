@@ -29,12 +29,23 @@ class User(db.Model):
     password = db.Column(db.String(255), unique=False, nullable=False)
     private_key = db.Column(db.String(255), unique=True, nullable=False)
     address = db.Column(db.String(255), unique=True, nullable=False)
-    typingdna_secured = db.Column(db.Boolean, nullable=False, default=False)
     date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
 
 def encrypt_password(password):
     return hashlib.sha512((password + app.config["ENCRYPTION_SALT"]).encode()).hexdigest()
+
+
+def check_typingdna(user):
+    r = tdna.check_user(tdna.hash_text(user.username))
+    if r.status_code == 200:
+        data = r.json()
+        if data["count"] + data["mobilecount"] > 0:
+            return True
+        else:
+            return False
+    else:
+        return False
 
 
 def login_required(f):
@@ -106,7 +117,7 @@ def login():
                 "address": user.address
             }
             session["typingdna_auth"] = False
-            if user.typingdna_secured:
+            if check_typingdna(user):
                 return redirect(url_for("dashboard"))
             else:
                 return redirect(url_for("enroll_typingdna"))
@@ -124,9 +135,6 @@ def enroll_typingdna():
         username = session["user"]["username"]
         r = tdna.auto(tdna.hash_text(username), tp)
         if r.status_code == 200:
-            User.query.filter_by(username=username).update(
-                dict(typingdna_secured=True))
-            db.session.commit()
             session["typingdna_auth"] = True
             flash("You have successfully registered TypingDNA 2FA", "success")
             return redirect(url_for("dashboard"))
@@ -161,7 +169,7 @@ def verify_typingdna():
 @login_required
 def dashboard():
     user = User.query.filter_by(username=session["user"]["username"]).first()
-    if not user.typingdna_secured:
+    if not check_typingdna(user):
         return redirect(url_for("enroll_typingdna"))
     if not session["typingdna_auth"]:
         return redirect(url_for("verify_typingdna"))

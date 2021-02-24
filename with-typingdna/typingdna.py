@@ -22,6 +22,15 @@ class TypingDNA:
             "custom_field": custom_field
         }
         return requests.post(url, headers=self.headers, data=data)
-    
+
+    def check_user(self, id, user_type=None, text_id=None, custom_field=None):
+        url = f"{self.base_url}/user/{id}"
+        params = {
+            "type": user_type,
+            "text_id": text_id,
+            "custom_field": custom_field
+        }
+        return requests.get(url, headers=self.headers, params=params)
+
     def hash_text(self, text):
         return hashlib.sha1((text + text[::-1]).encode()).hexdigest()

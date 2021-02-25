@@ -22,6 +22,7 @@ event_server = "https://api.trongrid.io"
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(255), unique=True, nullable=False)
     username = db.Column(db.String(255), unique=True, nullable=False)
     password = db.Column(db.String(255), unique=False, nullable=False)
     private_key = db.Column(db.String(255), unique=True, nullable=False)
@@ -65,10 +66,11 @@ def index():
 @app.route("/auth/register/", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
+        email = request.form.get("email").strip().lower()
         username = request.form.get("username").strip().lower()
         password = request.form.get("password")
 
-        if User.query.filter_by(username=username).first():
+        if User.query.filter_by((User.email=email) | (User.username=username)).first():
             flash("The account you are trying to create already exists", "danger")
             return redirect(url_for("register"))
 
@@ -77,7 +79,7 @@ def register():
         account = tron.create_account
         private_key = account.private_key
         address = account.address.base58
-        db.session.add(User(username=username, password=encrypt_password(password),
+        db.session.add(User(email=email, username=username, password=encrypt_password(password),
                             private_key=private_key, address=address))
         db.session.commit()
         flash("You have successfully registered your account", "success")

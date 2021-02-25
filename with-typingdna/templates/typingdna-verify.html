@@ -36,6 +36,11 @@
           <input type="hidden" id="tp" name="tp">
           <button type="button" class="btn btn-success" onclick="startAuthentication()">Start Authentication</button>
         </div>
+        <div class="text-center">
+          <a href="{{ url_for('otp_verification') }}">
+            <p class="mt-2">Can't complete TypingDNA verification? Use email OTP instead</p>
+          </a>
+        </div>
       </form>
     </div>
   </div>

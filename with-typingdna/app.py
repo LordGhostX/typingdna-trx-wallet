@@ -1,3 +1,4 @@
+import random
 import hashlib
 from datetime import datetime
 from functools import wraps
@@ -5,6 +6,7 @@ import requests
 from flask import *
 from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
+from flask_mail import Mail, Message
 from tronapi import Tron
 from typingdna import TypingDNA
 
@@ -13,8 +15,10 @@ app.config["SECRET_KEY"] = "SECRET_KEY"
 app.config["ENCRYPTION_SALT"] = "ENCRYPTION_SALT"
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///wallet.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["MAIL_SUPPRESS_SEND"] = True
 Bootstrap(app)
 db = SQLAlchemy(app)
+mail = Mail(app)
 tdna = TypingDNA("apiKey", "apiSecret")
 
 
@@ -115,6 +119,7 @@ def login():
             username=username, password=encrypt_password(password)).first()
         if user:
             session["user"] = {
+                "email": user.email,
                 "username": user.username,
                 "address": user.address
             }
@@ -162,6 +167,31 @@ def verify_typingdna():
             flash(r.json()["message"], "danger")
             return redirect(url_for("verify_typingdna"))
     return render_template("typingdna-verify.html")
+
+
+@app.route("/auth/email/verify/", methods=["GET", "POST"])
+@login_required
+def otp_verification():
+    if request.method == "POST":
+        otp_code = request.form.get("otp_code").strip()
+        if encrypt_password(otp_code) == session["otp_code"]:
+            session["typingdna_auth"] = True
+            return redirect(url_for("dashboard"))
+        else:
+            flash(
+                "You failed the Email OTP verification check, please try again", "danger")
+            return redirect(url_for("otp_verification"))
+
+    otp_code = str(random.randint(100000, 999999))
+    session["otp_code"] = encrypt_password(otp_code)
+    msg = Message("Crypto Wallet OTP", sender="otp@flaskcryptowallet.com",
+                  recipients=[session["user"]["email"]])
+    msg.body = f"The generated OTP for your Flask Cryptocurrency Wallet is {otp_code}"
+    print(msg)
+    mail.send(msg)
+
+    flash("Check your email address for the verification OTP", "success")
+    return render_template("email-verify.html")
 
 
 @app.route("/dashboard/", methods=["GET", "POST"])

@@ -100,6 +100,7 @@ def login():
             username=username, password=encrypt_password(password)).first()
         if user:
             session["user"] = {
+                "email": user.email,
                 "username": user.username,
                 "address": user.address
             }

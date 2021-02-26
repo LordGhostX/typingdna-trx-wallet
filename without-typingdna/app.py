@@ -70,7 +70,7 @@ def register():
         username = request.form.get("username").strip().lower()
         password = request.form.get("password")
 
-        if User.query.filter_by((User.email=email) | (User.username=username)).first():
+        if User.query.filter((User.email == email) | (User.username == username)).first():
             flash("The account you are trying to create already exists", "danger")
             return redirect(url_for("register"))
 

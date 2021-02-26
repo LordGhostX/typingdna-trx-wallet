@@ -85,7 +85,7 @@ def register():
         username = request.form.get("username").strip().lower()
         password = request.form.get("password")
 
-        if User.query.filter_by((User.email=email) | (User.username=username)).first():
+        if User.query.filter((User.email == email) | (User.username == username)).first():
             flash("The account you are trying to create already exists", "danger")
             return redirect(url_for("register"))
 
@@ -119,10 +119,7 @@ def login():
                 "address": user.address
             }
             session["typingdna_auth"] = False
-            if check_typingdna(user):
-                return redirect(url_for("dashboard"))
-            else:
-                return redirect(url_for("enroll_typingdna"))
+            return redirect(url_for("dashboard"))
         else:
             flash("You have supplied invalid login credentials", "danger")
             return redirect(url_for("login"))

@@ -176,6 +176,7 @@ def otp_verification():
         otp_code = request.form.get("otp_code").strip()
         if encrypt_password(otp_code) == session["otp_code"]:
             session["typingdna_auth"] = True
+            session.pop("otp_code")
             return redirect(url_for("dashboard"))
         else:
             flash(

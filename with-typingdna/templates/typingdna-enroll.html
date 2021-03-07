@@ -54,17 +54,36 @@
   });
   var typingPatterns = [];
 
+  function compareTexts(t1, t2) {
+    var dt1 = t1.split(' ');
+    var dt2 = t2.split(' ');
+    var total2 = 0;
+    var total1 = 0;
+    for (var i in dt2) {
+      total2 += (dt1.indexOf(dt2[i]) > -1) ? 1 : 0;
+    }
+    for (var i in dt1) {
+      total1 += (dt2.indexOf(dt1[i]) > -1) ? 1 : 0;
+    }
+    var total = (dt1.length > dt2.length) ? dt1.length : dt2.length;
+    var length = (dt1.length > dt2.length) ? dt1.length : dt2.length;
+    return total / length;
+  }
+
   function startAuthentication() {
+    let typedText = document.getElementById("auth-text").value;
+    let textToType = "I am authenticated by the way I type";
+
     document.getElementById("failed-auth").style.display = "none";
     document.getElementById("auth-text").value = "";
     TypingDNA.stop();
 
     let typingPattern = tdna.getTypingPattern({
       type: 1,
-      text: "I am authenticated by the way I type"
+      text: textToType
     });
 
-    if (typingPattern == null) {
+    if (typingPattern == null || (typedText.length / textToType.length) < 0.8 || compareTexts(textToType, typedText) < 0.8) {
       document.getElementById("failed-auth").style.display = "block";
     } else {
       typingPatterns.push(typingPattern);

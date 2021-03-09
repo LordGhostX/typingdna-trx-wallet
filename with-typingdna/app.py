@@ -45,7 +45,7 @@ def check_typingdna(user):
     r = tdna.check_user(tdna.hash_text(user.username))
     if r.status_code == 200:
         data = r.json()
-        if data["count"] + data["mobilecount"] > 0:
+        if data["count"] > 0:
             return True
         else:
             return False

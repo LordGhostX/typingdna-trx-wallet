@@ -270,6 +270,11 @@ def logout():
     return redirect(url_for("login"))
 
 
+@app.errorhandler(500)
+def internal_server_error_handler(e):
+    return "<h1>An internal server error occured or our servers have exceeded TypingDNA API rate limits.</h1>"
+
+
 if __name__ == "__main__":
     db.create_all()
     app.run(debug=True)

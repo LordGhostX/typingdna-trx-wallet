@@ -87,7 +87,7 @@
       text: textToType
     });
 
-    if (typingPattern == null || (typedText.length / textToType.length) < 0.8 || compareTexts(textToType, typedText) < 0.8) {
+    if (typingPattern == null || compareTexts(textToType, typedText) < 0.8) {
       document.getElementById("failed-auth").style.display = "block";
       TypingDNA.reset();
       TypingDNA.start();

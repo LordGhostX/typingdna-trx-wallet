@@ -41,16 +41,17 @@ def encrypt_password(password):
     return hashlib.sha512((password + app.config["ENCRYPTION_SALT"]).encode()).hexdigest()
 
 
-def check_typingdna(user):
-    r = tdna.check_user(tdna.hash_text(user.username))
+def check_typingdna(user, pattern_type):
+    r = tdna.check_user(tdna.hash_text(user.username),
+                        pattern_type=pattern_type)
     if r.status_code == 200:
         data = r.json()
-        if data["count"] > 0:
+        if data["count"] >= 3:
             return True
         else:
             return False
     else:
-        return False
+        abort(500)
 
 
 def login_required(f):
@@ -199,7 +200,8 @@ def otp_verification():
 @login_required
 def dashboard():
     user = User.query.filter_by(username=session["user"]["username"]).first()
-    if not check_typingdna(user):
+    pattern_type = 1
+    if not check_typingdna(user, pattern_type):
         return redirect(url_for("enroll_typingdna"))
     if not session["typingdna_auth"]:
         return redirect(url_for("verify_typingdna"))
